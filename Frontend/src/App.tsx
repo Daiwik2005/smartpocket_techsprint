@@ -11,6 +11,10 @@ import { Register } from './components/pages/Register';
 import { storage } from './utils/storage';
 import { initialSavingsGoals, initialBadges } from './data/mockData';
 import SocialPage from './components/pages/SocialPage';
+import Chatbot from "./components/Chatbot";
+import FloatingChatbot from "./components/FloatingChatbot";
+
+
 
 
 
@@ -89,6 +93,12 @@ function App() {
         <>
           <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
           <FloatingAssistant />
+        </>
+      )}
+      {username && (
+        <>
+          <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+          <FloatingChatbot />
         </>
       )}
     </div>
