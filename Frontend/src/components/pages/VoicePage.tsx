@@ -108,7 +108,7 @@ export function VoicePage() {
       date: new Date()
     };
 
-    await fetch('http://localhost:5000/api/transactions', {
+    await fetch(`${API_BASE_URL}/api/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(transaction),
