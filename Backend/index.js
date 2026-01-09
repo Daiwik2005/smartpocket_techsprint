@@ -10,6 +10,9 @@ import transactionRoutes from './transactions.js';
 import goalsRoutes from './goals.js';
 import badgesRoutes from './badges.js';
 import socialRoutes from './social.js'; 
+import chatRoutes from "./chat.js";
+
+
 
 dotenv.config();
 console.log('🔐 Mongo URI:', process.env.MONGO_URI);
@@ -34,6 +37,10 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
+
+//chatbot 
+app.use(express.json());
+app.use("/api", chatRoutes);
 
 // Default route
 app.get('/', (req, res) => {
