@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
 import { Mic, MicOff, Plus, Check, X } from 'lucide-react';
 import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
 import { parseVoiceInput, getCategoryEmoji } from '../../utils/voiceParser';
 import { storage } from '../../utils/storage';
 import { Transaction, VoiceParseResult } from '../../types';
+import React, { useState, useMemo } from 'react';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export function VoicePage() {
@@ -50,10 +52,13 @@ export function VoicePage() {
     }, 1000);
   }, []);
 
-  const { isListening, isSupported, startListening, stopListening } = useVoiceRecognition({
-    onResult: handleVoiceResult,
-    onError: (error) => console.error('Voice error:', error)
-  });
+  const voiceConfig = useMemo(() => ({
+  onResult: handleVoiceResult,
+  onError: (error: any) => console.error('Voice error:', error)
+}), [handleVoiceResult]);
+
+const { isListening, isSupported, startListening, stopListening } =
+  useVoiceRecognition(voiceConfig);
 
 
 

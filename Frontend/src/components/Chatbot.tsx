@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { sendChatMessage } from "../utils/chatApi";
 import { storage } from "../utils/storage";
+import { Mic, MicOff } from "lucide-react";
 
 /* ---------- Helpers ---------- */
 
@@ -47,8 +48,10 @@ export default function Chatbot() {
   >([]);
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState<number>(0);
+  const [listening, setListening] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   /* Fetch balance */
   useEffect(() => {
@@ -63,8 +66,8 @@ export default function Chatbot() {
     setMessages([
       {
         bot:
-          "Hi 👋 I’m your **Finance Assistant**.\n\n" +
-          "Before we chat, you can tap one of the options below to hear me speak."
+          "Hi 👋 I’m your **Finance Assistant**.\n" +
+          "You can type or just tap the mic and speak 🎤."
       }
     ]);
   }, []);
@@ -73,6 +76,30 @@ export default function Chatbot() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  /* Init Speech Recognition */
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      await handleVoiceSend(transcript);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
 
   /* Quick actions */
   const quickActions = [
@@ -87,7 +114,7 @@ export default function Chatbot() {
     {
       label: "💡 Financial tip",
       text:
-        "Try the 50-30-20 rule. Use 50 percent of your income for needs, 30 percent for wants, and save at least 20 percent."
+        "Try the 50-30-20 rule. Use 50 percent for needs, 30 percent for wants, and save at least 20 percent."
     },
     {
       label: "🎯 Goal update",
@@ -99,6 +126,24 @@ export default function Chatbot() {
   function handleQuickAction(text: string) {
     speak(text);
     setMessages(prev => [...prev, { bot: text }]);
+  }
+
+  function startListening() {
+    if (recognitionRef.current && !listening) {
+      recognitionRef.current.start();
+    }
+  }
+
+  async function handleVoiceSend(transcript: string) {
+    if (!transcript.trim()) return;
+
+    setLoading(true);
+    setMessages(prev => [...prev, { user: transcript }]);
+
+    const reply = await sendChatMessage(transcript);
+
+    setMessages(prev => [...prev, { bot: reply }]);
+    setLoading(false);
   }
 
   async function handleSend() {
@@ -140,7 +185,7 @@ export default function Chatbot() {
           </div>
         ))}
 
-        {/* Quick actions shown only at start */}
+        {/* Quick actions at start */}
         {messages.length === 1 && (
           <div className="space-y-2">
             {quickActions.map((a, i) => (
@@ -173,6 +218,20 @@ export default function Chatbot() {
           placeholder="Ask a finance question…"
           onKeyDown={e => e.key === "Enter" && handleSend()}
         />
+
+        {/* Mic Button */}
+        <button
+          onClick={startListening}
+          className={`p-2 rounded-lg border ${
+            listening
+              ? "bg-red-100 text-red-600"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+          title="Speak your question"
+        >
+          {listening ? <MicOff size={18} /> : <Mic size={18} />}
+        </button>
+
         <button
           onClick={handleSend}
           className="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs sm:text-sm hover:bg-indigo-700"

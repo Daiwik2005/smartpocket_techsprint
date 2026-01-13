@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Navigation } from './components/Navigation';
-import { FloatingAssistant } from './components/FloatingAssistant';
 import { HomePage } from './components/pages/HomePage';
 import { Dashboard } from './components/pages/Dashboard';
 import { VoicePage } from './components/pages/VoicePage';
@@ -9,15 +8,9 @@ import { QuizPage } from './components/pages/QuizPage';
 import { Login } from './components/pages/Login';
 import { Register } from './components/pages/Register';
 import { storage } from './utils/storage';
-import { initialSavingsGoals, initialBadges } from './data/mockData';
+import { initialSavingsGoals } from './data/mockData';
 import SocialPage from './components/pages/SocialPage';
-import Chatbot from "./components/Chatbot";
 import FloatingChatbot from "./components/FloatingChatbot";
-
-
-
-
-
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
@@ -25,15 +18,14 @@ function App() {
 
   useEffect(() => {
     const initializeData = async () => {
+      // ✅ Savings goals can be seeded (static data)
       const existingGoals = await storage.getSavingsGoals();
       if (existingGoals.length === 0) {
         await storage.saveSavingsGoals(initialSavingsGoals);
       }
 
-      const existingBadges = await storage.getBadges();
-      if (existingBadges.length === 0) {
-        await storage.saveBadges(initialBadges);
-      }
+      // ❌ Badge seeding removed
+      // Badges are computed server-side from transactions
     };
 
     initializeData();
@@ -89,12 +81,6 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       {renderPage()}
 
-      {/* {username && (
-        <>
-          <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
-          <FloatingAssistant />
-        </>
-      )} */}
       {username && (
         <>
           <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
