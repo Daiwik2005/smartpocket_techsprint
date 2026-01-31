@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recha
 import { storage } from '../../utils/storage';
 import { Transaction, SavingsGoal } from '../../types';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { sendLocalNotification } from "../../utils/notifications";
 
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF4444'];
@@ -120,6 +121,34 @@ const pagedInsights = insights.slice(
   insightPage * INSIGHTS_PER_PAGE,
   insightPage * INSIGHTS_PER_PAGE + INSIGHTS_PER_PAGE
 );
+
+useEffect(() => {
+  if (totalIncome === 0 || transactions.length === 0) return;
+
+  if (totalExpenses > totalIncome) {
+    sendLocalNotification(
+      "Quick heads-up",
+      "You spent more than you earned recently. Maybe check food or shopping."
+    );
+  }
+}, [totalIncome, totalExpenses]);
+
+useEffect(() => {
+  if (totalIncome === 0 || transactions.length === 0) return;
+
+  if (totalIncome > totalExpenses) {
+    sendLocalNotification(
+      "Nice one",
+      "You saved money this time. That habit is starting to stick."
+    );
+  }
+}, [totalIncome, totalExpenses]);
+
+useEffect(() => {
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+}, []);
 
 
   return (
