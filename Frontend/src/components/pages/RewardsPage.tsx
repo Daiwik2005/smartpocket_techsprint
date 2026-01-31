@@ -1,7 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { Trophy, Star, Calendar, Award } from 'lucide-react';
 import { Badge, Transaction } from '../../types';
-import { storage } from '../../utils/storage';
+
+
+
+
+const ALL_BADGES = [
+  {
+    title: 'First Transaction',
+    description: 'You made your very first transaction!',
+    emoji: '🎉',
+  },
+  {
+    title: 'Transaction Master',
+    description: 'You made 10+ transactions!',
+    emoji: '💼',
+  },
+  {
+    title: 'Big Saver',
+    description: 'Saved over ₹5000!',
+    emoji: '💰',
+  },
+  {
+    title: 'Money Pro',
+    description: '5 incomes and 5 expenses recorded!',
+    emoji: '📈',
+  },
+  {
+    title: 'Consistent Tracker',
+    description: 'Tracked expenses for 3+ days!',
+    emoji: '📅',
+  },
+];
+
+
 
 export function RewardsPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -10,32 +42,54 @@ export function RewardsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      const [badgeData, txnData] = await Promise.all([
-        storage.getBadges(),
-        storage.getTransactions()
+      const userId = localStorage.getItem('userId');
+      if (!userId) return;
+
+      const API_BASE = 'http://localhost:5000/api';
+
+      const [badgesRes, txnsRes] = await Promise.all([
+        fetch(`${API_BASE}/badges/${userId}`),
+        fetch(`${API_BASE}/transactions/${userId}`)
       ]);
 
-      setBadges(badgeData);
+
+      const badgesData: Badge[] = await badgesRes.json();
+      const txnData: Transaction[] = await txnsRes.json();
+
+      setBadges(badgesData);
       setTotalTransactions(txnData.length);
 
-      const balance = txnData.reduce((sum, txn) =>
-        txn.type === 'income' ? sum + txn.amount : sum - txn.amount, 0);
+      const balance = txnData.reduce(
+        (sum, txn) =>
+          txn.type === 'income' ? sum + txn.amount : sum - txn.amount,
+        0
+      );
+
       setTotalSaved(Math.max(0, balance));
     };
 
     loadData();
   }, []);
 
-  const earnedBadges = badges.filter(b => b.earned);
-  const availableBadges = badges.filter(b => !b.earned);
+  const earnedBadges = badges;
 
+const availableBadges = ALL_BADGES.filter(
+  (badge) => !earnedBadges.some((b) => b.title === badge.title)
+);
+
+
+  
+const achievementRate = Math.round(
+  (earnedBadges.length / ALL_BADGES.length) * 100
+);
   const stats = [
     { label: 'Badges Earned', value: earnedBadges.length, emoji: '🏆', color: 'text-yellow-600' },
     { label: 'Transactions', value: totalTransactions, emoji: '📊', color: 'text-blue-600' },
     { label: 'Money Saved', value: `₹${totalSaved}`, emoji: '💰', color: 'text-green-600' },
-    { label: 'Achievement Rate', value: `${badges.length ? Math.round((earnedBadges.length / badges.length) * 100) : 0}%`, emoji: '🎯', color: 'text-purple-600' }
+    { label: 'Achievement Rate', value: `${achievementRate}%`, emoji: '🎯', color: 'text-purple-600' }
   ];
 
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-pink-50 pb-20 pt-6">
       <div className="px-6 max-w-4xl mx-auto">
@@ -57,19 +111,28 @@ export function RewardsPage() {
         <div className="bg-white rounded-2xl p-6 mb-8 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-6 h-6 text-yellow-600" />
-            <h2 className="text-xl font-bold text-gray-800">Earned Badges ({earnedBadges.length})</h2>
+            <h2 className="text-xl font-bold text-gray-800">
+              Earned Badges ({earnedBadges.length})
+            </h2>
           </div>
 
           {earnedBadges.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {earnedBadges.map(badge => (
-                <div key={badge._id} className="bg-gradient-to-r from-yellow-100 to-orange-100 p-4 rounded-xl border-2 border-yellow-300 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-800 px-2 py-1 rounded-bl-lg text-xs font-bold">EARNED</div>
+                <div
+                  key={badge._id}
+                  className="bg-gradient-to-r from-yellow-100 to-orange-100 p-4 rounded-xl border-2 border-yellow-300 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-800 px-2 py-1 rounded-bl-lg text-xs font-bold">
+                    EARNED
+                  </div>
+
                   <div className="flex items-center gap-4">
                     <div className="text-4xl animate-bounce-slow">{badge.emoji}</div>
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-800 mb-1">{badge.title}</h3>
                       <p className="text-sm text-gray-600 mb-2">{badge.description}</p>
+
                       {badge.earnedDate && (
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <Calendar size={12} />
@@ -95,12 +158,17 @@ export function RewardsPage() {
         <div className="bg-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <Star className="w-6 h-6 text-gray-400" />
-            <h2 className="text-xl font-bold text-gray-800">Available Badges ({availableBadges.length})</h2>
+            <h2 className="text-xl font-bold text-gray-800">
+              Available Badges ({availableBadges.length})
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableBadges.map(badge => (
-              <div key={badge._id} className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-colors">
+            {availableBadges.map((badge, index) => (
+  <div key={`available-${index}`}
+
+                className="bg-gray-50 p-4 rounded-xl border-2 border-gray-200"
+              >
                 <div className="flex items-center gap-4">
                   <div className="text-4xl grayscale opacity-50">{badge.emoji}</div>
                   <div className="flex-1">
